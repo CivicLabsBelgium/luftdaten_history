@@ -23,11 +23,13 @@
   },
   "homepage": "https://github.com/CivicLabsBelgium/irceline_live_cache#readme",
   "dependencies": {
+    "@log4js-node/logstash-http": "^1.0.0",
     "cheerio": "^1.0.0-rc.3",
     "csv-parse": "^4.4.1",
     "express": "^4.16.4",
     "fs-extra": "^7.0.1",
     "got": "^9.6.0",
+    "log4js": "^4.1.0",
     "serve-index": "^1.9.1",
     "serve-static": "^1.13.2"
   },

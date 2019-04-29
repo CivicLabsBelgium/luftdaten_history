@@ -3,6 +3,9 @@ const csvParse = require('csv-parse/lib/sync')
 const fs = require('fs-extra')
 const path = require('path')
 const cheerio = require('cheerio')
+const log4js = require('log4js')
+const logger = log4js.getLogger('default')
+logger.addContext('client', 'influencair')
 
 const staticDirectoryPath = path.join(__dirname, '..', 'static')
 let running = false
@@ -19,9 +22,9 @@ const delay = (duration) => {
 const runner = () => {
     if (running) return
     if (dayQueue.size === 0) return
-    console.log(dayQueue.entries())
+    logger.info(dayQueue.entries())
     const day = [...dayQueue][0]
-    console.log('Starting history processor ', day)
+    logger.info('Starting history processor ', day)
     generateHistory(day)
 }
 
@@ -106,9 +109,39 @@ const addToQueue = (day) => {
     dayQueue.add(day)
 }
 
+const isDateAvailableAtLuftdatenArchive = (day) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const directoryList = new Set()
+            const html = (await got(`https://archive.luftdaten.info/`)).body
+            const $ = cheerio.load(html)
+            $('table').find('tbody td a').each((index, value) => {
+                const name = $(value).text().split('/').shift()
+                directoryList.add(name)
+            })
+            resolve(directoryList.has(day))
+        } catch (error) {
+            reject(error)
+        }
+    })
+}
+
 const generateHistory = async (date) => {
     if (running) return
     running = true
+    try {
+        if (!await isDateAvailableAtLuftdatenArchive(date)) {
+            dayQueue.delete(date)
+            running = false
+            return
+        }
+    } catch (error) {
+        dayQueue.delete(date)
+        running = false
+        logger.error(error)
+        return
+    }
+
     let counter = 0
     const csvList = []
     const html = (await got(`https://archive.luftdaten.info/${date}/`)).body
@@ -187,11 +220,11 @@ const generateHistory = async (date) => {
 
             data['PM25'][zone][date][PM25.id] = PM25
         } catch (error) {
-            console.error(error)
+            logger.error(error)
         }
         counter++
-        console.log(counter, date, sensorId)
-        await delay(500)
+        logger.info(counter, date, `id: ${sensorId}`, `${Math.round((counter / csvList.length) * 100)}%`)
+        await delay(200)
     }
     for (const phenomenom in data) {
         if (data.hasOwnProperty(phenomenom)) {
@@ -205,9 +238,9 @@ const generateHistory = async (date) => {
                                 fs.outputJson(phenomenomFilePath, sensors, (err) => {
                                     if (err) throw err
                                 })
-                                console.log(phenomenomFilePath)
+                                logger.info(phenomenomFilePath)
                             } catch (error) {
-                                console.error(error)
+                                logger.error(error)
                             }
                         }
                     }
@@ -225,5 +258,6 @@ module.exports = {
     addToQueue,
     isDayInQueue,
     getLocationsForDay,
-    getAvailableDays
+    getAvailableDays,
+    isDateAvailableAtLuftdatenArchive
 }
