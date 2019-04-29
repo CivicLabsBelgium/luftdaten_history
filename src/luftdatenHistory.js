@@ -29,13 +29,18 @@ const isDayAlreadyProcessed = (date) => {
     return new Promise(async (resolve, reject) => {
         try {
             const listOfDays = new Set()
-            const PM10DirectoryPath = path.join(staticDirectoryPath, 'PM10')
-            const folderList = await fs.readdir(PM10DirectoryPath)
-            for (const locationDir of folderList) {
-                const locationDirPath = path.join(PM10DirectoryPath, locationDir)
-                const days = await fs.readdir(locationDirPath)
-                for (const day of days) {
-                    listOfDays.add(day)
+            const phenomenomDirectoryList = await fs.readdir(staticDirectoryPath)
+            if (!phenomenomDirectoryList.length) return resolve(false)
+            for (const phenomenom of phenomenomDirectoryList) {
+                const PM10DirectoryPath = path.join(staticDirectoryPath, phenomenom)
+                const folderList = await fs.readdir(PM10DirectoryPath)
+                if (!folderList.length) return resolve(false)
+                for (const locationDir of folderList) {
+                    const locationDirPath = path.join(PM10DirectoryPath, locationDir)
+                    const days = await fs.readdir(locationDirPath)
+                    for (const day of days) {
+                        listOfDays.add(day)
+                    }
                 }
             }
             resolve(listOfDays.has(date))
@@ -49,13 +54,18 @@ const getAvailableDays = () => {
     return new Promise(async (resolve, reject) => {
         try {
             const listOfDays = new Set()
-            const PM10DirectoryPath = path.join(staticDirectoryPath, 'PM10')
-            const folderList = await fs.readdir(PM10DirectoryPath)
-            for (const locationDir of folderList) {
-                const locationDirPath = path.join(PM10DirectoryPath, locationDir)
-                const days = await fs.readdir(locationDirPath)
-                for (const day of days) {
-                    listOfDays.add(day)
+            const phenomenomDirectoryList = await fs.readdir(staticDirectoryPath)
+            if (!phenomenomDirectoryList.length) return resolve([])
+            for (const phenomenom of phenomenomDirectoryList) {
+                const PM10DirectoryPath = path.join(staticDirectoryPath, phenomenom)
+                const folderList = await fs.readdir(PM10DirectoryPath)
+                if (!folderList.length) return resolve([])
+                for (const locationDir of folderList) {
+                    const locationDirPath = path.join(PM10DirectoryPath, locationDir)
+                    const days = await fs.readdir(locationDirPath)
+                    for (const day of days) {
+                        listOfDays.add(day)
+                    }
                 }
             }
             resolve([...listOfDays])
@@ -191,11 +201,11 @@ const generateHistory = async (date) => {
                         if (data[phenomenom][zone].hasOwnProperty(date)) {
                             try {
                                 const sensors = Object.values(data[phenomenom][zone][date])
-                                const PM10FilePath = path.join(staticDirectoryPath, phenomenom, zone, date, 'data.json')
-                                fs.outputJson(PM10FilePath, sensors, (err) => {
+                                const phenomenomFilePath = path.join(staticDirectoryPath, phenomenom, zone, date, 'data.json')
+                                fs.outputJson(phenomenomFilePath, sensors, (err) => {
                                     if (err) throw err
                                 })
-                                console.log(PM10FilePath)
+                                console.log(phenomenomFilePath)
                             } catch (error) {
                                 console.error(error)
                             }
