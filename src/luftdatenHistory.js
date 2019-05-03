@@ -71,7 +71,8 @@ const getAvailableDays = () => {
                     }
                 }
             }
-            resolve([...listOfDays])
+            const sortedListOfDays = [...listOfDays].sort((a, b) => Date.parse(a) - Date.parse(b))
+            resolve(sortedListOfDays)
         } catch (error) {
             reject(error)
         }
