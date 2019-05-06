@@ -3,9 +3,6 @@ const csvParse = require('csv-parse/lib/sync')
 const fs = require('fs-extra')
 const path = require('path')
 const cheerio = require('cheerio')
-const log4js = require('log4js')
-const logger = log4js.getLogger('default')
-logger.addContext('client', 'influencair')
 
 const staticDirectoryPath = path.join(__dirname, '..', 'static')
 let running = false
@@ -22,9 +19,9 @@ const delay = (duration) => {
 const runner = () => {
     if (running) return
     if (dayQueue.size === 0) return
-    logger.info(dayQueue.entries())
+    console.info(dayQueue.entries())
     const day = [...dayQueue][0]
-    logger.info('Starting history processor ', day)
+    console.info('Starting history processor ', day)
     generateHistory(day)
 }
 
@@ -139,7 +136,7 @@ const generateHistory = async (date) => {
     } catch (error) {
         dayQueue.delete(date)
         running = false
-        logger.error(error)
+        console.error(error)
         return
     }
 
@@ -221,10 +218,10 @@ const generateHistory = async (date) => {
 
             data['PM25'][zone][date][PM25.id] = PM25
         } catch (error) {
-            logger.error(error)
+            console.error(error)
         }
         counter++
-        logger.info(counter, date, `id: ${sensorId}`, `${Math.round((counter / csvList.length) * 100)}%`)
+        console.info(counter, date, `id: ${sensorId}`, `${Math.round((counter / csvList.length) * 100)}%`)
         await delay(200)
     }
     for (const phenomenom in data) {
@@ -239,9 +236,9 @@ const generateHistory = async (date) => {
                                 fs.outputJson(phenomenomFilePath, sensors, (err) => {
                                     if (err) throw err
                                 })
-                                logger.info(phenomenomFilePath)
+                                console.info(phenomenomFilePath)
                             } catch (error) {
-                                logger.error(error)
+                                console.error(error)
                             }
                         }
                     }

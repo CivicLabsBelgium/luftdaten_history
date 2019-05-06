@@ -4,32 +4,17 @@ const serveStatic = require('serve-static')
 const serveIndex = require('serve-index')
 const luftdaten = require('./luftdatenHistory')
 const util = require('./utlility')
-const log4js = require('log4js')
-
-log4js.configure({
-    appenders: {
-        logstash: {
-            type: '@log4js-node/logstash-http',
-            url: 'http://elk.appsaloon.be:8080/_log4js',
-            application: 'logstash-log4js',
-            logType: 'server',
-            logChannel: 'node'
-        },
-        out: { type: 'stdout' }
-    },
-    categories: {
-        default: {
-            appenders: [ 'out' ], // [ 'logstash' ],
-            level: 'debug' }
-    }
-})
-const logger = log4js.getLogger('default')
-logger.addContext('client', 'influencair')
+const initLogstash = require('@appsaloon/logger-js').default
+const logstashOptions = {
+    protocol: 'https',
+    hostname: 'elk.appsaloon.be',
+    path: 'app-backend',
+    site: 'influencair/history'
+}
+initLogstash(logstashOptions)
 
 const app = express()
 const port = 8081
-
-app.use(log4js.connectLogger(log4js.getLogger('default'), { level: 'auto' }))
 
 app.get('/generateHistory/:day', async (req, res) => {
     try {
@@ -51,7 +36,7 @@ app.get('/generateHistory/:day', async (req, res) => {
             res.send('We like to see a date in your url, formated like this: "YYYY-MM-DD"')
         }
     } catch (error) {
-        logger.error(error)
+        console.error(error)
         res.status(404).send(`some things went wrong. We're collecting the piece and try to glue them back, till then`)
     }
 })
@@ -73,7 +58,7 @@ app.get('/availableDays', async (req, res) => {
         const days = await luftdaten.getAvailableDays()
         res.send(days)
     } catch (error) {
-        logger.error(error)
+        console.error(error)
         res.status(500)
     }
 })
@@ -85,4 +70,4 @@ app.use(serveIndex(path.join(__dirname, '..', 'static'), {
     icons: true
 }))
 
-app.listen(port, () => logger.info(`Listening on port ${port}!`))
+app.listen(port, () => console.info(`Listening on port ${port}!`))
