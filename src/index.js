@@ -70,4 +70,19 @@ app.use(serveIndex(path.join(__dirname, '..', 'static'), {
     icons: true
 }))
 
+app.use((req, res, next) => {
+    var err = new Error('Not Found')
+    err.status = 404
+    next(err)
+})
+
+app.use((err, req, res, next) => {
+    console.error('Something went wrong:', err)
+    res.status(err.status || 500)
+    res.render('error', {
+        message: err.message,
+        error: err
+    })
+})
+
 app.listen(port, () => console.info(`Listening on port ${port}!`))
