@@ -64,7 +64,9 @@ app.get('/availableDays', async (req, res) => {
 })
 
 app.use(serveStatic(path.join(__dirname, '..', 'static'), {
-    index: false
+    index: false,
+    maxAge: 1000 * 60 * 60 * 24,
+    immutable: true
 }))
 app.use(serveIndex(path.join(__dirname, '..', 'static'), {
     icons: true
