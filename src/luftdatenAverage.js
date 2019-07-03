@@ -73,17 +73,17 @@ const generateAverages = async (sensorId) => {
                 id: sensorId,
                 phenomenon: 'pm10',
                 location: {},
-                dailyAverages: [],
                 firstDate: '',
-                lastDate: ''
+                lastDate: '',
+                dailyAverages: []
             }
             pm25Data = {
                 id: sensorId,
                 phenomenon: 'pm25',
                 location: {},
-                dailyAverages: [],
                 firstDate: '',
-                lastDate: ''
+                lastDate: '',
+                dailyAverages: []
             }
         }
     } catch (error) {
