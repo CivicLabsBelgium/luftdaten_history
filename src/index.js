@@ -2,7 +2,8 @@ const express = require('express')
 const path = require('path')
 const serveStatic = require('serve-static')
 const serveIndex = require('serve-index')
-const luftdaten = require('./luftdatenHistory')
+const luftdatenHistory = require('./luftdatenHistory')
+const luftdatenAverage = require('./luftdatenAverage')
 const util = require('./utlility')
 const initLogstash = require('@appsaloon/logger-js').default
 const logstashOptions = {
@@ -22,15 +23,15 @@ app.get('/generateHistory/:day', async (req, res) => {
         if (day && util.isValidDate(day)) {
             if (Date.parse(day) > Date.now()) {
                 res.send('We\'re a historic data storage, we cannot predict the future Air-Q')
-            } else if (await luftdaten.isDayAlreadyProcessed(day)) {
+            } else if (await luftdatenHistory.isDayAlreadyProcessed(day)) {
                 res.send(`Day ${day} already exist`)
-            } else if (luftdaten.isDayInQueue(day)) {
+            } else if (luftdatenHistory.isDayInQueue(day)) {
                 res.send(`Day ${day} is in our queue and will be processed soon.`)
-            } else if (!await luftdaten.isDateAvailableAtLuftdatenArchive(day)) {
+            } else if (!await luftdatenHistory.isDateAvailableAtLuftdatenArchive(day)) {
                 res.send(`Day ${day} is not available in the historical dataset of Luftdaten, try another day`)
             } else {
                 res.send(`We don't have this day ${day} in our history yet, but will add this to the queue`)
-                luftdaten.addToQueue(day)
+                luftdatenHistory.addToQueue(day)
             }
         } else {
             res.send('We like to see a date in your url, formated like this: "YYYY-MM-DD"')
@@ -41,11 +42,30 @@ app.get('/generateHistory/:day', async (req, res) => {
     }
 })
 
+app.get('/generateAverage/:sensor', (req, res) => {
+    const sensorId = Number.parseInt(req.params.sensor)
+    console.log(sensorId)
+    if (Number.isNaN(sensorId)) {
+        res.status(404).send('Your sensorId should be a number')
+    } else {
+        if (sensorId < 27 || sensorId > 100000) {
+            res.status(404).send('Your sensorId is either to small or to big')
+        } else {
+            if (luftdatenAverage.isSensorInQueue(sensorId)) {
+                res.send(`Sensor ${sensorId} is in our queue and will be processed soon.`)
+            } else {
+                res.send('Thanks, we added your request to our queue. It will take some time to process')
+                luftdatenAverage.addToQueue(sensorId)
+            }
+        }
+    }
+})
+
 app.get('/availableLocations/:day', async (req, res) => {
     const day = req.params.day
     if (day && util.isValidDate(day)) {
-        if (await luftdaten.isDayAlreadyProcessed(day)) {
-            const locationsList = await luftdaten.getLocationsForDay(day)
+        if (await luftdatenHistory.isDayAlreadyProcessed(day)) {
+            const locationsList = await luftdatenHistory.getLocationsForDay(day)
             res.send(locationsList)
         } else {
             res.status(404).send(`we haven't processed this day ${day} yet`)
@@ -55,7 +75,7 @@ app.get('/availableLocations/:day', async (req, res) => {
 
 app.get('/availableDays', async (req, res) => {
     try {
-        const days = await luftdaten.getAvailableDays()
+        const days = await luftdatenHistory.getAvailableDays()
         res.send(days)
     } catch (error) {
         console.error(error)
@@ -86,4 +106,4 @@ app.use((err, req, res, next) => {
     })
 })
 
-app.listen(port, () => console.info(`Listening on port ${port}!`))
+app.listen(port, () => console.info(`Listening on port ${port} !`))
