@@ -59,24 +59,31 @@ const generateAverages = async (sensorId) => {
     let pm25Data = {}
     try {
         if (await fs.pathExists(pm10File) && await fs.pathExists(pm25File)) {
+            // we already have some data for this sensor, load them
             pm10Data = await fs.readJSON(pm10File)
             pm25Data = await fs.readJSON(pm25File)
-            // remove dates from availableDates
+
+            // we don't need to fetch all the data we already have, get rid of all dates in between our first and last date.
             const firstDate = Date.parse(pm10Data.firstDate)
             const lastDate = Date.parse(pm10Data.lastDate)
             availableDates = availableDates.filter(date => Date.parse(date) < firstDate || Date.parse(date) > lastDate)
         } else {
+            // create new objects to store our data
             pm10Data = {
                 id: sensorId,
                 phenomenon: 'pm10',
                 location: {},
-                dailyAverages: []
+                dailyAverages: [],
+                firstDate: '',
+                lastDate: ''
             }
             pm25Data = {
                 id: sensorId,
                 phenomenon: 'pm25',
                 location: {},
-                dailyAverages: []
+                dailyAverages: [],
+                firstDate: '',
+                lastDate: ''
             }
         }
     } catch (error) {
@@ -84,9 +91,11 @@ const generateAverages = async (sensorId) => {
         return
     }
 
+    // Tricky line :-) Converting the dailyAverages object{date: ###, value: ###} to an array [ date, {date: ###, value: ###}] and create a new Map()
     const dailyAveragesPm10 = new Map(pm10Data.dailyAverages.map(average => [average.date, average]))
     const dailyAveragesPm25 = new Map(pm25Data.dailyAverages.map(average => [average.date, average]))
 
+    // Loop over all the available dates to see if we can find the csv
     for (let index = 0; index < availableDates.length; index++) {
         const date = availableDates[index]
         try {
@@ -97,6 +106,8 @@ const generateAverages = async (sensorId) => {
                 delimiter: ';',
                 cast: true
             })
+
+            // if our object is new it doesn't have a location yet
             if (!pm10Data.location.id) {
                 pm10Data.location = {
                     id: records[0].location,
@@ -109,38 +120,55 @@ const generateAverages = async (sensorId) => {
                     longitude: records[0].lon
                 }
             }
+
+            // sum up all datapoints
             const totals = records.reduce((acc, record) => {
                 acc.pm10 += record.P1
                 acc.pm25 += record.P2
                 return acc
             }, { pm10: 0, pm25: 0 })
+
+            // divide the totals by the length of the amount of records and round to 2 dec
             const averages = {
                 pm10: Math.round((totals.pm10 / records.length) * 100) / 100,
                 pm25: Math.round((totals.pm25 / records.length) * 100) / 100
             }
 
+            // Use our Map set
             dailyAveragesPm10.set(date, { date, value: averages.pm10 })
             dailyAveragesPm25.set(date, { date, value: averages.pm25 })
         } catch (error) {
             console.error(error.statusMessage, date)
         }
     }
-    // saving time
+
+    // turn our Map object to an Array
     pm10Data.dailyAverages = [...dailyAveragesPm10.values()]
     pm25Data.dailyAverages = [...dailyAveragesPm25.values()]
 
-    const firstLastDates = pm10Data.dailyAverages.reduce((acc, average) => {
-        if (Date.parse(average.date) < acc.first) acc.first = Date.parse(average.date)
-        if (Date.parse(average.date) > acc.last) acc.last = Date.parse(average.date)
-        return acc
-    }, { first: Date.now(), last: 0 })
+    if (pm10Data.dailyAverage.length !== 0) {
+        // Find the first and last date in our dailyAverages Array
+        const firstLastDates = pm10Data.dailyAverages.reduce((acc, average) => {
+            if (Date.parse(average.date) < acc.first) acc.first = Date.parse(average.date)
+            if (Date.parse(average.date) > acc.last) acc.last = Date.parse(average.date)
+            return acc
+        }, { first: Date.now(), last: 0 })
 
-    pm10Data.firstDate = firstLastDates.first.toString()
-    pm10Data.lastDate = firstLastDates.last.toString()
-    pm25Data.firstDate = firstLastDates.first.toString()
-    pm25Data.lastDate = firstLastDates.last.toString()
+        pm10Data.firstDate = firstLastDates.first.toString()
+        pm10Data.lastDate = firstLastDates.last.toString()
+        pm25Data.firstDate = firstLastDates.first.toString()
+        pm25Data.lastDate = firstLastDates.last.toString()
+    } else {
+        delete pm10Data.dailyAverage
+        delete pm10Data.firstDate
+        delete pm10Data.lastDate
+        delete pm25Data.dailyAverage
+        delete pm25Data.firstDate
+        delete pm25Data.lastDate
+    }
 
     try {
+        // save to the server
         await fs.outputJson(pm10File, pm10Data)
         await fs.outputJson(pm25File, pm25Data)
     } catch (error) {
