@@ -146,7 +146,7 @@ const generateAverages = async (sensorId) => {
     pm10Data.dailyAverages = [...dailyAveragesPm10.values()]
     pm25Data.dailyAverages = [...dailyAveragesPm25.values()]
 
-    if (pm10Data.dailyAverages && pm10Data.dailyAverage.length !== 0) {
+    if (pm10Data.dailyAverages && pm10Data.dailyAverages.length !== 0) {
         // Find the first and last date in our dailyAverages Array
         const firstLastDates = pm10Data.dailyAverages.reduce((acc, average) => {
             if (Date.parse(average.date) < acc.first) acc.first = Date.parse(average.date)
