@@ -64,9 +64,10 @@ const generateAverages = async (sensorId) => {
             pm25Data = await fs.readJSON(pm25File)
 
             // we don't need to fetch all the data we already have, get rid of all dates in between our first and last date.
-            const firstDate = Date.parse(pm10Data.firstDate)
-            const lastDate = Date.parse(pm10Data.lastDate)
+            const firstDate = parseInt(pm10Data.firstDate)
+            const lastDate = parseInt(pm10Data.lastDate)
             availableDates = availableDates.filter(date => Date.parse(date) < firstDate || Date.parse(date) > lastDate)
+            console.log(availableDates)
         } else {
             // create new objects to store our data
             pm10Data = {
@@ -138,7 +139,7 @@ const generateAverages = async (sensorId) => {
             dailyAveragesPm10.set(date, { date, value: averages.pm10 })
             dailyAveragesPm25.set(date, { date, value: averages.pm25 })
         } catch (error) {
-            console.error(error.statusMessage, date)
+            // console.error(error.statusMessage, date)
         }
     }
 
