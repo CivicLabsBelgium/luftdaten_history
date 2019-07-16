@@ -38,7 +38,7 @@ const luftdatenArchiveListOfDates = () => {
             $('table').find('tbody td a').each((index, value) => {
                 const name = $(value).text().split('/').shift()
                 const date = Date.parse(name)
-                if (!isNaN(date) && date > Date.parse('2018-07-29')) {
+                if (!isNaN(date) && date > Date.parse('2017-01-01')) {
                     directoryList.add(name)
                 }
             })
