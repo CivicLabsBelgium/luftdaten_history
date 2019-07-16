@@ -57,14 +57,16 @@ const getAvailableDays = () => {
             const phenomenomDirectoryList = await fs.readdir(staticDirectoryPath)
             if (!phenomenomDirectoryList.length) return resolve([])
             for (const phenomenom of phenomenomDirectoryList) {
-                const PM10DirectoryPath = path.join(staticDirectoryPath, phenomenom)
-                const folderList = await fs.readdir(PM10DirectoryPath)
-                if (!folderList.length) return resolve([])
-                for (const locationDir of folderList) {
-                    const locationDirPath = path.join(PM10DirectoryPath, locationDir)
-                    const days = await fs.readdir(locationDirPath)
-                    for (const day of days) {
-                        listOfDays.add(day)
+                if (phenomenom === 'PM10' || phenomenom === 'PM25') {
+                    const PM10DirectoryPath = path.join(staticDirectoryPath, phenomenom)
+                    const folderList = await fs.readdir(PM10DirectoryPath)
+                    if (!folderList.length) return resolve([])
+                    for (const locationDir of folderList) {
+                        const locationDirPath = path.join(PM10DirectoryPath, locationDir)
+                        const days = await fs.readdir(locationDirPath)
+                        for (const day of days) {
+                            listOfDays.add(day)
+                        }
                     }
                 }
             }
