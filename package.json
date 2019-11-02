@@ -24,7 +24,7 @@
   "homepage": "https://github.com/CivicLabsBelgium/irceline_live_cache#readme",
   "dependencies": {
     "cheerio": "^1.0.0-rc.3",
-    "csv-parse": "^4.4.1",
+    "csv-parse": "^4.4.6",
     "express": "^4.16.4",
     "fs-extra": "^7.0.1",
     "got": "^9.6.0",
