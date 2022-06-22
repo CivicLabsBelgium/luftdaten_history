@@ -27,7 +27,7 @@
     "csv-parse": "^4.4.6",
     "express": "^4.16.4",
     "fs-extra": "^7.0.1",
-    "got": "^9.6.0",
+    "got": "^11.8.5",
     "serve-index": "^1.9.1",
     "serve-static": "^1.13.2",
     "@appsaloon/logger-js": "latest"
